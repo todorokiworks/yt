@@ -55,7 +55,13 @@ export function parseVtt(text) {
     const body = [];
     while (index < lines.length && !timestamp.test(lines[index].trim())) {
       const cleaned = decode(lines[index].replace(tag, "")).replace(/\s+/g, " ").trim();
-      if (cleaned && !cleaned.startsWith("WEBVTT") && !cleaned.startsWith("Kind:") && !cleaned.startsWith("Language:")) {
+      if (
+        cleaned &&
+        !/^\[[^\]]+\]$/.test(cleaned) &&
+        !cleaned.startsWith("WEBVTT") &&
+        !cleaned.startsWith("Kind:") &&
+        !cleaned.startsWith("Language:")
+      ) {
         body.push(cleaned);
       }
       index += 1;
@@ -65,7 +71,7 @@ export function parseVtt(text) {
     cues.push({
       start: normalizeTime(match[1]),
       end: normalizeTime(match[2]),
-      text: body.at(-1),
+      text: body.join(" "),
     });
   }
   return cues;
