@@ -1,0 +1,43 @@
+name: Import video
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: YouTube URL
+        required: true
+        type: string
+      rebuild:
+        description: 作り直す
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install yt-dlp
+      - run: npm ci
+      - run: node scripts/import-video.mjs "${{ inputs.url }}" ${{ inputs.rebuild && '--rebuild' || '' }}
+      - name: Commit subtitles
+        run: |
+          git add src/data/videos
+          if git diff --cached --quiet; then
+            echo "変更はありません"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Add subtitles for imported video"
+          git push
