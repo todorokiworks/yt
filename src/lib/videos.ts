@@ -36,9 +36,4 @@ export function readSrt(id: string): string {
   return fs.readFileSync(path.join(videoDir, `${id}.srt`), "utf8");
 }
 
-export function formatClock(timestamp: string): string {
-  const [hours, minutes, rest] = timestamp.split(":");
-  const seconds = rest.split(",")[0];
-  if (hours === "00") return `${minutes}:${seconds}`;
-  return `${Number(hours)}:${minutes}:${seconds}`;
-}
+export { formatClock } from "./phrases.mjs";

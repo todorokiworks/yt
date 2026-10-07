@@ -1,3 +1,5 @@
+import { attachGloss } from "./gloss";
+
 type Phrase = {
   n: number;
   start: string;
@@ -58,6 +60,7 @@ export async function startWatch(root: HTMLElement): Promise<void> {
   const pos = root.querySelector<HTMLElement>("[data-pos]");
   const playerHost = root.querySelector<HTMLElement>("[data-yt]");
   if (!script || !playerHost || phrases.length === 0) return;
+  attachGloss(root);
 
   const storageKey = `yt-phrase:${videoId}`;
   const saved = Number(sessionStorage.getItem(storageKey));
@@ -99,11 +102,15 @@ export async function startWatch(root: HTMLElement): Promise<void> {
   root.querySelector("[data-prev]")?.addEventListener("click", () => show(current - 1, true));
   root.querySelector("[data-next]")?.addEventListener("click", () => show(current + 1, true));
   cards.forEach((card) => {
-    card.addEventListener("click", () => show(Number(card.dataset.phrase), true));
+    card.addEventListener("click", (event) => {
+      const target = event.target;
+      if (target instanceof Element && target.closest(".phrase__word")) return;
+      show(Number(card.dataset.phrase), true);
+    });
   });
   document.addEventListener("keydown", (event) => {
     const target = event.target;
-    if (target instanceof HTMLElement && (target.tagName === "INPUT" || target.tagName === "TEXTAREA")) return;
+    if (target instanceof HTMLElement && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.closest(".phrase__word"))) return;
     if (event.key === "ArrowDown" || event.key === "ArrowRight" || event.key === "j") {
       event.preventDefault();
       show(current + 1, true);

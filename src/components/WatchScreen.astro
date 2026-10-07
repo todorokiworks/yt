@@ -1,0 +1,342 @@
+---
+import { formatClock } from "../lib/videos";
+import type { Video } from "../lib/videos";
+
+interface Props {
+  video: Video | null;
+  title?: string;
+}
+
+const { video, title } = Astro.props;
+const heading = title ?? video?.title ?? "";
+const phrases = video?.phrases ?? [];
+const phraseData = JSON.stringify(phrases).replaceAll("<", "\\u003c");
+---
+
+<div class="watch" data-video-id={video?.id ?? ""}>
+  <script type="application/json" data-phrase-json set:html={phraseData} />
+  <header class="watch-header">
+    <div class="watch-header__main">
+      <a class="watch-header__back" href="/">一覧</a>
+      <h1 class="watch-header__title">{heading}</h1>
+    </div>
+    <p class="watch-header__count"><span data-pos>1</span> / {phrases.length}</p>
+    <a class="watch-header__srt" href={video ? `/subtitles/${video.id}.srt` : "#"}>SRT</a>
+  </header>
+  <div class="watch-stage">
+    <div class="watch-player">
+      <div class="watch-player__frame">
+        <div data-yt></div>
+      </div>
+    </div>
+    <div class="watch-script" data-script>
+      {
+        phrases.map((phrase, index) => (
+          <article class:list={["phrase", { "is-current": index === 0 }]} data-phrase={index}>
+            <div class="phrase__meta">
+              <span class="phrase__num">{String(phrase.n).padStart(2, "0")}</span>
+              <time class="phrase__time">{formatClock(phrase.start)}</time>
+            </div>
+            <p class="phrase__en">{phrase.en}</p>
+            <p class="phrase__ja">{phrase.ja.trim() || "日本語訳は未設定です。"}</p>
+          </article>
+        ))
+      }
+    </div>
+  </div>
+  <nav class="watch-nav">
+    <button type="button" data-prev>前のフレーズ</button>
+    <button type="button" data-next>次のフレーズ</button>
+  </nav>
+  <div class="gloss" data-gloss hidden role="tooltip">
+    <p class="gloss__term" data-gloss-term></p>
+    <p class="gloss__meaning" data-gloss-meaning></p>
+  </div>
+</div>
+
+<style lang="scss">
+  @use "../styles/variables" as *;
+
+  .watch {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    overflow: hidden;
+
+    &[hidden] {
+      display: none;
+    }
+
+    @media (max-width: $breakpoint-sp) {
+      height: 100dvh;
+    }
+
+    :global(.phrase) {
+      min-width: 0;
+      margin: 0 0 12px;
+      padding: 16px 18px;
+      overflow-wrap: anywhere;
+      background: $color-white;
+      border: 1px solid $color-border;
+      border-radius: 12px;
+      cursor: pointer;
+
+      @media (max-width: $breakpoint-sp) {
+        padding: 14px;
+      }
+    }
+
+    :global(.phrase.is-current) {
+      border-color: $color-blue;
+      box-shadow: 0 0 0 3px $color-highlight;
+    }
+
+    :global(.phrase__meta) {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    :global(.phrase__num),
+    :global(.phrase__time) {
+      color: $color-text-sub;
+      font-family: $font-family-num;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    :global(.phrase__en) {
+      margin: 0;
+      color: $color-navy;
+      font-size: 17px;
+      font-weight: 500;
+      line-height: 1.6;
+      touch-action: pan-y;
+
+      @media (max-width: $breakpoint-sp) {
+        font-size: 16px;
+      }
+    }
+
+    :global(.phrase__en.is-glossing) {
+      user-select: none;
+    }
+
+    :global(.phrase__word) {
+      display: inline;
+      padding: 0 1px;
+      border: 0;
+      border-radius: 4px;
+      appearance: none;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      line-height: inherit;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+
+      @media (hover: hover) {
+        &:hover {
+          background: $color-gray-bg;
+        }
+      }
+    }
+
+    :global(.phrase__word.is-picked) {
+      background: $color-highlight;
+    }
+
+    :global(.phrase__ja) {
+      margin: 10px 0 0;
+      padding-top: 10px;
+      border-top: 1px solid $color-border;
+      font-size: 15px;
+      line-height: 1.8;
+
+      @media (max-width: $breakpoint-sp) {
+        font-size: 14px;
+      }
+    }
+  }
+
+  .watch-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 20px;
+    background: $color-white;
+    border-bottom: 1px solid $color-border;
+
+    @media (max-width: $breakpoint-sp) {
+      gap: 8px;
+      padding: 10px 16px;
+    }
+
+    &__main {
+      min-width: 0;
+      flex: 1;
+    }
+
+    &__back {
+      color: $color-blue;
+      font-size: 12px;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    &__title {
+      margin: 2px 0 0;
+      overflow: hidden;
+      color: $color-navy;
+      font-size: 18px;
+      line-height: 1.4;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+
+      @media (max-width: $breakpoint-sp) {
+        font-size: 15px;
+      }
+    }
+
+    &__count {
+      margin: 0;
+      color: $color-text-sub;
+      font-family: $font-family-num;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    &__srt {
+      color: $color-blue;
+      font-family: $font-family-num;
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+    }
+  }
+
+  .watch-stage {
+    display: grid;
+    grid-template-columns: minmax(300px, 42%) minmax(0, 1fr);
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+
+    @media (max-width: $breakpoint-sp) {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: auto minmax(0, 1fr);
+    }
+  }
+
+  .watch-player {
+    min-width: 0;
+    max-width: 100%;
+    padding: 16px;
+    background: $color-navy;
+
+    @media (max-width: $breakpoint-sp) {
+      padding: 12px 28px;
+    }
+
+    &__frame {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      overflow: hidden;
+      background: $color-navy;
+
+      :global(iframe) {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        border: 0;
+      }
+    }
+  }
+
+  .watch-script {
+    min-width: 0;
+    max-width: 100%;
+    overflow: auto;
+    padding: 16px 16px 24px;
+
+    @media (max-width: $breakpoint-sp) {
+      padding: 12px 12px 16px;
+    }
+  }
+
+  .watch-nav {
+    display: flex;
+    gap: 12px;
+    height: $watch-nav-height;
+    padding: 12px 20px;
+    background: $color-white;
+    border-top: 1px solid $color-border;
+
+    @media (max-width: $breakpoint-sp) {
+      gap: 8px;
+      padding: 10px 16px;
+    }
+
+    button {
+      flex: 1;
+      border: 0;
+      border-radius: 8px;
+      background: $color-navy;
+      color: $color-white;
+      font-family: $font-family-base;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+
+      @media (max-width: $breakpoint-sp) {
+        font-size: 14px;
+      }
+    }
+
+    [data-prev] {
+      background: $color-white;
+      color: $color-navy;
+      border: 1px solid $color-border;
+    }
+  }
+
+  .gloss {
+    position: fixed;
+    z-index: 30;
+    width: max-content;
+    max-width: 280px;
+    padding: 10px 12px;
+    background: $color-white;
+    border: 1px solid $color-border;
+    border-radius: 12px;
+    box-shadow: 0 0 0 3px $color-highlight;
+
+    @media (max-width: $breakpoint-sp) {
+      max-width: calc(100vw - 32px);
+    }
+
+    &__term {
+      margin: 0;
+      color: $color-text-sub;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    &__meaning {
+      margin: 4px 0 0;
+      color: $color-navy;
+      font-size: 15px;
+      font-weight: 500;
+      line-height: 1.6;
+      overflow-wrap: anywhere;
+
+      @media (max-width: $breakpoint-sp) {
+        font-size: 14px;
+      }
+    }
+  }
+</style>
