@@ -3,96 +3,30 @@ import Layout from "../layouts/Layout.astro";
 import { listVideos } from "../lib/videos";
 
 const videos = listVideos();
-const knownIds = JSON.stringify(videos.map((video) => video.id));
 ---
 
 <Layout title="yt">
   <main class="home">
     <p class="home__label">日英スクリプト</p>
     <h1 class="home__title">動画を選ぶ</h1>
-    <form class="home-import" data-import>
-      <label class="home-import__label" for="video-url">YouTube の URL</label>
-      <div class="home-import__row">
-        <input id="video-url" name="url" type="text" inputmode="url" required placeholder="https://www.youtube.com/watch?v=" autocomplete="off" spellcheck="false" />
-        <button type="submit">字幕を作る</button>
-      </div>
-      <p class="home-import__status" data-import-status hidden></p>
-    </form>
-    <script type="application/json" data-known set:html={knownIds} />
-    <p class="home__empty" data-empty hidden={videos.length > 0}>取り込み済みの動画はまだありません。</p>
-    <ul class="home__list" data-list>
-      {
-        videos.map((video) => (
-          <li>
-            <a class="home-card" href={`/watch/${video.id}`}>
-              <span class="home-card__title">{video.title}</span>
-              <span class="home-card__meta">{video.phrases.length} フレーズ</span>
-            </a>
-          </li>
-        ))
-      }
-    </ul>
+    {
+      videos.length === 0 ? (
+        <p class="home__empty">取り込み済みの動画はまだありません。</p>
+      ) : (
+        <ul class="home__list">
+          {videos.map((video) => (
+            <li>
+              <a class="home-card" href={`/watch/${video.id}`}>
+                <span class="home-card__title">{video.title}</span>
+                <span class="home-card__meta">{video.phrases.length} フレーズ</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      )
+    }
   </main>
 </Layout>
-
-<script>
-  import { createVideo, watchHref } from "../scripts/create-video";
-  import { videoIdFromUrl } from "../lib/phrases.mjs";
-  import { listSaved } from "../lib/saved-videos.mjs";
-
-  const known = new Set<string>(JSON.parse(document.querySelector("[data-known]")?.textContent || "[]"));
-  const list = document.querySelector<HTMLElement>("[data-list]");
-  const empty = document.querySelector<HTMLElement>("[data-empty]");
-  const form = document.querySelector<HTMLFormElement>("[data-import]");
-  const status = document.querySelector<HTMLElement>("[data-import-status]");
-  const input = document.querySelector<HTMLInputElement>("#video-url");
-  const button = form?.querySelector("button");
-
-  if (list) {
-    for (const video of listSaved()) {
-      if (known.has(video.id)) continue;
-      const item = document.createElement("li");
-      const link = document.createElement("a");
-      link.className = "home-card";
-      link.href = watchHref(video.id, known);
-      const title = document.createElement("span");
-      title.className = "home-card__title";
-      title.textContent = video.title;
-      const meta = document.createElement("span");
-      meta.className = "home-card__meta";
-      meta.textContent = `${video.phrases.length} フレーズ`;
-      link.append(title, meta);
-      item.append(link);
-      list.append(item);
-    }
-    if (empty && list.children.length > 0) empty.hidden = true;
-  }
-
-  form?.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    if (!input || !status || !button) return;
-    button.disabled = true;
-    input.disabled = true;
-    status.hidden = false;
-    status.textContent = "確認しています…";
-    try {
-      const href = await createVideo(input.value, known, (message) => {
-        status.textContent = message;
-      });
-      status.textContent = "視聴画面を開きます…";
-      location.assign(href);
-    } catch (error) {
-      status.textContent = error instanceof Error ? error.message : "字幕を作成できませんでした";
-      button.disabled = false;
-      input.disabled = false;
-      try {
-        videoIdFromUrl(input.value);
-      } catch {
-        input.focus();
-      }
-    }
-  });
-</script>
 
 <style lang="scss">
   @use "../styles/variables" as *;
@@ -126,7 +60,7 @@ const knownIds = JSON.stringify(videos.map((video) => video.id));
     }
 
     &__empty {
-      margin: 0 0 12px;
+      margin: 0;
       color: $color-text-sub;
     }
 
@@ -134,114 +68,40 @@ const knownIds = JSON.stringify(videos.map((video) => video.id));
       margin: 0;
       padding: 0;
       list-style: none;
-
-      :global(.home-card) {
-        display: block;
-        margin-bottom: 12px;
-        padding: 18px 20px;
-        background: $color-white;
-        border: 1px solid $color-border;
-        border-radius: 12px;
-        color: $color-navy;
-        text-decoration: none;
-
-        @media (max-width: $breakpoint-sp) {
-          padding: 16px;
-        }
-      }
-
-      :global(.home-card__title) {
-        display: block;
-        font-size: 18px;
-        font-weight: 700;
-        line-height: 1.5;
-
-        @media (max-width: $breakpoint-sp) {
-          font-size: 16px;
-        }
-      }
-
-      :global(.home-card__meta) {
-        display: block;
-        margin-top: 6px;
-        color: $color-text-sub;
-        font-family: $font-family-num;
-        font-size: 13px;
-      }
     }
   }
 
-  .home-import {
-    margin: 0 0 28px;
+  .home-card {
+    display: block;
+    margin-bottom: 12px;
+    padding: 18px 20px;
+    background: $color-white;
+    border: 1px solid $color-border;
+    border-radius: 12px;
+    color: $color-navy;
+    text-decoration: none;
 
     @media (max-width: $breakpoint-sp) {
-      margin-bottom: 20px;
+      padding: 16px;
     }
 
-    &__label {
+    &__title {
       display: block;
-      margin-bottom: 8px;
-      color: $color-text-sub;
-      font-size: 13px;
+      font-size: 18px;
       font-weight: 700;
-    }
-
-    &__row {
-      display: flex;
-      gap: 8px;
-
-      @media (max-width: $breakpoint-sp) {
-        flex-direction: column;
-      }
-    }
-
-    input {
-      min-width: 0;
-      flex: 1;
-      padding: 12px 14px;
-      border: 1px solid $color-border;
-      border-radius: 8px;
-      background: $color-white;
-      color: $color-navy;
-      font: inherit;
-      font-size: 15px;
+      line-height: 1.5;
 
       @media (max-width: $breakpoint-sp) {
         font-size: 16px;
       }
-
-      &:focus {
-        outline: 2px solid $color-highlight;
-        border-color: $color-blue;
-      }
     }
 
-    button {
-      border: 0;
-      border-radius: 8px;
-      padding: 12px 18px;
-      background: $color-navy;
-      color: $color-white;
-      font-family: $font-family-base;
-      font-size: 15px;
-      font-weight: 700;
-      cursor: pointer;
-
-      @media (max-width: $breakpoint-sp) {
-        font-size: 14px;
-      }
-
-      &:disabled {
-        cursor: wait;
-        opacity: 0.7;
-      }
-    }
-
-    &__status {
-      margin: 10px 0 0;
+    &__meta {
+      display: block;
+      margin-top: 6px;
       color: $color-text-sub;
-      font-size: 14px;
-      line-height: 1.6;
+      font-family: $font-family-num;
+      font-size: 13px;
     }
   }
 </style>

@@ -15,12 +15,10 @@ npm run dev
 
 ## 動画を追加する
 
-ローカルでは次を実行する。
+手元で SRT と視聴用 JSON を書き出す。
 
 ```sh
 npm run import -- "https://www.youtube.com/watch?v=VIDEO_ID"
 ```
 
-同じ動画を取り直すときは `--rebuild` を付ける。
-
-GitHub では Actions の Import video を手動実行し、YouTube の URL を渡す。完了した push を Netlify が公開する。
+同じ動画を取り直すときは `--rebuild` を付ける。できた `src/data/videos/` のファイルを GitHub の `main` へ push すると、Netlify が公開する。
