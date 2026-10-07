@@ -15,7 +15,7 @@ npm run dev
 
 ## 動画を追加する
 
-ローカルでは次を実行する。`yt-dlp` が必要。
+ローカルでは次を実行する。
 
 ```sh
 npm run import -- "https://www.youtube.com/watch?v=VIDEO_ID"

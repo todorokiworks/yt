@@ -24,11 +24,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - run: python -m pip install yt-dlp
-      - run: npm ci
       - run: node scripts/import-video.mjs "${{ inputs.url }}" ${{ inputs.rebuild && '--rebuild' || '' }}
       - name: Commit subtitles
         run: |
